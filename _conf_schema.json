@@ -1,0 +1,8 @@
+{
+    "at_view_pig": {
+        "description": "开启艾特他人查看今日小猪功能",
+        "hint": "是否允许通过艾特他人来查看对方的今日小猪，默认为关闭",
+        "type": "bool",
+        "default": false
+    }
+}
