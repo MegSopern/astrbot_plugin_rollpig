@@ -4,6 +4,7 @@
 
 # astrbot_plugin_rollpig
 _✨ [astrbot](https://github.com/AstrBotDevs/AstrBot) 今日小猪 ✨_ 
+
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![AstrBot](https://img.shields.io/badge/AstrBot-3.4%2B-orange.svg)](https://github.com/Soulter/AstrBot)
@@ -85,6 +86,6 @@ astrbot_plugin_rollpig/
 
 ## 📜 许可证
 
-本项目采用 [GPL-3.0 许可证](LICENSE) 开源，详情请查阅许可证文件
+本项目采用 [MIT 许可证](LICENSE) 开源，详情请查阅许可证文件
 
 ![Star History Chart](https://api.star-history.com/svg?repos=MegSopern/astrbot_plugin_rollpig&type)
