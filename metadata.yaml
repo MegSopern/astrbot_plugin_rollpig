@@ -1,6 +1,6 @@
 name: "astrbot_plugin_rollpig"
 display_name: "今日小猪"
 desc: "抽取属于自己的每日小猪"
-version: "1.0.0"
+version: "1.1.0"
 author: "MegSopern"
 repo: "https://github.com/MegSopern/astrbot_plugin_rollpig"

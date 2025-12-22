@@ -21,7 +21,7 @@ from PIL import ImageDraw, ImageFont
     "astrbot_plugin_rollpig",
     "MegSopern",
     "抽取属于自己的每日小猪",
-    "1.0.0",
+    "1.1.0",
     "https://github.com/MegSopern/astrbot_plugin_rollpig",
 )
 class RollPigPlugin(Star):
