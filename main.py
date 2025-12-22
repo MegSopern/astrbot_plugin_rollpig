@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import random
@@ -7,7 +8,7 @@ from pathlib import Path
 import astrbot.api.message_components as Comp
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.star import Context, Star, register
+from astrbot.api.star import Context, Star, StarTools, register
 from astrbot.core import AstrBotConfig
 from astrbot.core.message.components import At
 
@@ -24,6 +25,18 @@ from PIL import ImageDraw, ImageFont
     "https://github.com/MegSopern/astrbot_plugin_rollpig",
 )
 class RollPigPlugin(Star):
+    CANVAS_WIDTH = 800  # 画布宽度
+    CANVAS_HEIGHT = 800  # 画布高度
+    AVATAR_SIZE = 280  # 头像大小
+    SPACING_AVATAR_NAME = 20  # 头像与名称间距
+    SPACING_NAME_DESC = 25  # 名称与描述间距
+    SPACING_DESC_ANALYSIS = 30  # 描述与解析间距
+    DESC_FONT_SIZE = 32  # 描述字体大小
+    ANALYSIS_FONT_SIZE = 28  # 解析字体大小
+    ANALYSIS_LINE_HEIGHT_FACTOR = 1.6  # 解析行高因子
+    ANALYSIS_WIDTH_RATIO = 0.85  # 解析宽度比例
+    NAME_FONT_SIZE = 66  # 名称字体大小
+
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
         self.config = config
@@ -34,9 +47,7 @@ class RollPigPlugin(Star):
 
         # 初始化路径
         self.plugin_dir = Path(__file__).parent
-        self.plugin_data_dir = (
-            self.plugin_dir.parent.parent / "plugin_data" / "astrbot_plugin_rollpig"
-        )
+        self.plugin_data_dir = StarTools.get_data_dir("astrbot_plugin_rollpig")
         self.res_dir = self.plugin_dir / "resource"
         self.font_dir = self.res_dir / "font"  # 插件内字体目录（跨平台优先）
         self.piginfo_path = self.res_dir / "pig.json"
@@ -56,6 +67,26 @@ class RollPigPlugin(Star):
         self.font_regular = self._init_regular_font()  # 常规字体（描述/解析）
         self.font_bold = self._init_bold_font()  # 加粗字体（名称）
 
+    def _load_font(
+        self, font_candidates: list[str | Path], size: int, purpose: str
+    ) -> ImageFont.FreeTypeFont | None:
+        """
+        通用字体加载器，按候选顺序加载可用字体\n
+        :param font_candidates: 字体路径候选列表
+        :param size: 字体大小
+        :param purpose: 字体用途描述
+        :return: 加载的字体对象，失败则返回默认字体
+        """
+        for font_path in font_candidates:
+            if Path(font_path).exists():
+                try:
+                    return ImageFont.truetype(str(font_path), size)
+                except Exception as e:
+                    logger.warning(f"加载{purpose}字体{font_path}失败：{e}")
+                    continue
+        logger.warning(f"未找到{purpose}字体，使用默认字体")
+        return ImageFont.load_default()
+
     def _init_regular_font(self) -> ImageFont.FreeTypeFont | None:
         """初始化常规字体（可爱字体，用于描述/解析）"""
         font_paths = [
@@ -66,15 +97,7 @@ class RollPigPlugin(Star):
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/System/Library/Fonts/PingFang.ttc",
         ]
-        for font_path in font_paths:
-            if Path(font_path).exists():
-                try:
-                    return ImageFont.truetype(str(font_path), 28)
-                except Exception as e:
-                    logger.warning(f"加载常规字体{font_path}失败：{e}")
-                    continue
-        logger.warning("未找到常规字体，使用默认字体")
-        return ImageFont.load_default()
+        return self._load_font(font_paths, self.DESC_FONT_SIZE, "常规")
 
     def _init_bold_font(self) -> ImageFont.FreeTypeFont | None:
         """初始化加粗字体（荆南麦圆体，用于名称）"""
@@ -85,22 +108,17 @@ class RollPigPlugin(Star):
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/System/Library/Fonts/PingFang.ttc",
         ]
-        for font_path in font_paths:
-            if Path(font_path).exists():
-                try:
-                    return ImageFont.truetype(
-                        str(font_path), 66
-                    )  # 匹配示例的大字号名称
-                except Exception as e:
-                    logger.warning(f"加载加粗字体{font_path}失败：{e}")
-                    continue
-        logger.warning("未找到加粗字体，将模拟加粗效果")
-        return ImageFont.load_default()
+        return self._load_font(font_paths, self.NAME_FONT_SIZE, "加粗")
 
     def _get_text_size(
         self, text: str, font: ImageFont.FreeTypeFont
     ) -> tuple[int, int]:
-        """兼容PIL不同版本的文字尺寸计算"""
+        """
+        兼容PIL不同版本的文字尺寸计算\n
+        :param text: 文字内容
+        :param font: 字体对象
+        :return: 文字宽高元组
+        """
         draw = ImageDraw.Draw(PILImage.new("RGB", (1, 1)))
         try:
             bbox = draw.textbbox((0, 0), text, font=font)
@@ -116,7 +134,14 @@ class RollPigPlugin(Star):
         font: ImageFont.FreeTypeFont,
         fill: tuple,
     ):
-        """模拟文字加粗（兜底方案）"""
+        """
+        模拟文字加粗（兜底方案）\n
+        :param draw: ImageDraw对象
+        :param pos: 文字位置
+        :param text: 文字内容
+        :param font: 字体对象
+        :param fill: 文字颜色
+        """
         x, y = pos
         offsets = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for ox, oy in offsets:
@@ -124,7 +149,12 @@ class RollPigPlugin(Star):
         draw.text((x, y), text, fill=fill, font=font)
 
     def load_json(self, path: Path, default):
-        """加载JSON文件"""
+        """
+        加载JSON文件\/
+        :param path: 文件路径
+        :param default: 默认值（文件不存在或解析失败时使用）
+        :return: 解析后的数据对象
+        """
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
@@ -141,14 +171,22 @@ class RollPigPlugin(Star):
             return default
 
     def save_json(self, path: Path, data):
-        """保存JSON数据"""
+        """
+        保存JSON数据\n
+        :param path: 文件路径
+        :param data: 数据对象
+        """
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
     def find_image_file(self, pig_id: str) -> Path | None:
-        """查找对应ID的图片文件"""
+        """
+        查找对应ID的图片文件\n
+        :param pig_id: 小猪ID
+        :return: 图片文件路径，未找到返回None
+        """
         exts = ["png", "jpg", "jpeg", "webp", "gif"]
         for ext in exts:
             file = self.image_dir / f"{pig_id}.{ext}"
@@ -159,21 +197,25 @@ class RollPigPlugin(Star):
         return None
 
     def render_pig_image(self, pig_data: dict) -> Path | None:
-        """整体居中渲染（垂直+水平双居中）"""
+        """
+        整体居中渲染（垂直+水平双居中）\n
+        :param pig_data: 小猪数据字典
+        :return: 生成的图片临时文件路径，失败返回None
+        """
         pig_id = pig_data.get("id", "")
         pig_name = pig_data.get("name", "未知小猪")
         pig_desc = pig_data.get("description", "无描述")
         pig_analysis = pig_data.get("analysis", "无解析")
 
         # 1. 画布基础配置
-        canvas_width = 800
-        canvas_height = 800
+        canvas_width = self.CANVAS_WIDTH
+        canvas_height = self.CANVAS_HEIGHT
         canvas = PILImage.new("RGB", (canvas_width, canvas_height), (255, 255, 255))
         draw = ImageDraw.Draw(canvas)
 
         # 2. 预加载所有元素并计算尺寸（用于总高度计算）
         # 2.1 头像尺寸【核心修改：放大到280x280】
-        avatar_w, avatar_h = 280, 280  # 从200放大到280，视觉更突出
+        avatar_w, avatar_h = self.AVATAR_SIZE, self.AVATAR_SIZE
         avatar = None
         avatar_path = self.find_image_file(pig_id)
         if avatar_path:
@@ -184,11 +226,12 @@ class RollPigPlugin(Star):
                 if avatar.size != (avatar_w, avatar_h):
                     center_x = avatar.width // 2
                     center_y = avatar.height // 2
+                    half = self.AVATAR_SIZE // 2
                     crop_box = (
-                        center_x - 140,  # 从100改为140
-                        center_y - 140,
-                        center_x + 140,
-                        center_y + 140,
+                        center_x - half,
+                        center_y - half,
+                        center_x + half,
+                        center_y + half,
                     )
                     avatar = avatar.crop(crop_box)
             except Exception as e:
@@ -200,13 +243,19 @@ class RollPigPlugin(Star):
         name_w, name_h = self._get_text_size(pig_name, name_font)
 
         # 2.3 描述尺寸
-        desc_font = self.font_regular.font_variant(size=32)  # 匹配示例的描述字号
+        desc_font = self.font_regular.font_variant(
+            size=self.DESC_FONT_SIZE
+        )  # 匹配示例的描述字号
         desc_w, desc_h = self._get_text_size(pig_desc, desc_font)
 
         # 2.4 解析尺寸（自动换行后）
-        analysis_font = self.font_regular.font_variant(size=28)
-        line_height = int(28 * 1.6)  # 匹配示例的行间距
-        max_analysis_width = int(canvas_width * 0.85)  # 更宽的解析区域
+        analysis_font = self.font_regular.font_variant(size=self.ANALYSIS_FONT_SIZE)
+        line_height = int(
+            self.ANALYSIS_FONT_SIZE * self.ANALYSIS_LINE_HEIGHT_FACTOR
+        )  # 匹配示例的行间距
+        max_analysis_width = int(
+            canvas_width * self.ANALYSIS_WIDTH_RATIO
+        )  # 更宽的解析区域
         # 解析文字换行
         analysis_lines = []
         current_line = ""
@@ -222,9 +271,11 @@ class RollPigPlugin(Star):
         analysis_total_h = len(analysis_lines) * line_height
 
         # 3. 计算整体内容总高度（所有元素+间距）
-        spacing_avatar_name = 20  # 头像放大后，间距从30调小到20，避免布局拥挤
-        spacing_name_desc = 25  # 名称到描述的间距保持
-        spacing_desc_analysis = 30  # 描述到解析的间距保持
+        spacing_avatar_name = (
+            self.SPACING_AVATAR_NAME
+        )  # 头像放大后，间距从30调小到20，避免布局拥挤
+        spacing_name_desc = self.SPACING_NAME_DESC  # 名称到描述的间距保持
+        spacing_desc_analysis = self.SPACING_DESC_ANALYSIS  # 描述到解析的间距保持
         total_content_h = (
             avatar_h
             + spacing_avatar_name
@@ -305,20 +356,20 @@ class RollPigPlugin(Star):
             if (isinstance(seg, At) and str(seg.qq) != event.get_self_id())  # 排除自己
         ]
 
-    @filter.command("今日小猪", aliases=["抽小猪", "rollpig", "今天是什么小猪"])
+    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig"})
     async def roll_pig(self, event: AstrMessageEvent):
         """抽取今日小猪"""
         today_str = datetime.date.today().isoformat()
         user_id = event.get_sender_id()
         if self.at_view_pig:
             parts = event.message_str.strip().split()
-            id = self.get_at_ids(event)
-            if len(id) > 1:
+            at_ids = self.get_at_ids(event)
+            if len(at_ids) > 1:
                 await event.send(event.plain_result("一次只能抽取一个小猪哦！"))
                 return
             if len(parts) >= 2:
-                if id[0] not in self.admins_id:
-                    user_id = id[0]
+                if at_ids[0] not in self.admins_id:
+                    user_id = at_ids[0]
                 else:
                     await event.send(event.plain_result("你这只小猪，不许对主人不敬！"))
                     return
@@ -346,7 +397,8 @@ class RollPigPlugin(Star):
         self, event: AstrMessageEvent, pig_data: dict, user_id: str
     ):
         """合成并发送小猪图片"""
-        img_path = self.render_pig_image(pig_data)
+        # 使用线程池异步执行CPU密集型任务
+        img_path = await asyncio.to_thread(self.render_pig_image, pig_data)
         if img_path and img_path.exists():
             try:
                 chain = [Comp.Plain("这是你的今日小猪：")]
@@ -356,12 +408,15 @@ class RollPigPlugin(Star):
                     chain.insert(1, Comp.Plain("，"))
                 await event.send(event.chain_result(chain))
                 await event.send(event.image_result(str(img_path.absolute())))
-                img_path.unlink(missing_ok=True)
-                logger.info("合成图片发送成功，临时文件已清理")
+                logger.info("合成图片发送成功")
                 return
             except Exception as e:
                 logger.error(f"发送合成图片失败：{str(e)}")
-                img_path.unlink(missing_ok=True)
+            finally:
+                try:
+                    img_path.unlink(missing_ok=True)
+                except Exception as cleanup_err:
+                    logger.warning(f"清理临时图片失败：{cleanup_err}")
 
         await self.send_fallback_msg(event, pig_data)
 
