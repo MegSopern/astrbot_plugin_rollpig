@@ -142,8 +142,8 @@ class RollPigPlugin(Star):
         draw.text((x, y), text, fill=fill, font=font)
 
     def load_json(self, path: Path, default):
-        r"""
-        加载JSON文件\/
+        """
+        加载JSON文件\n
         :param path: 文件路径
         :param default: 默认值（文件不存在或解析失败时使用）
         :return: 解析后的数据对象
