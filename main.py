@@ -17,13 +17,6 @@ from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 
 
-@register(
-    "astrbot_plugin_rollpig",
-    "MegSopern",
-    "抽取属于自己的每日小猪",
-    "1.1.0",
-    "https://github.com/MegSopern/astrbot_plugin_rollpig",
-)
 class RollPigPlugin(Star):
     CANVAS_WIDTH = 800  # 画布宽度
     CANVAS_HEIGHT = 800  # 画布高度
@@ -149,7 +142,7 @@ class RollPigPlugin(Star):
         draw.text((x, y), text, fill=fill, font=font)
 
     def load_json(self, path: Path, default):
-        """
+        r"""
         加载JSON文件\/
         :param path: 文件路径
         :param default: 默认值（文件不存在或解析失败时使用）
