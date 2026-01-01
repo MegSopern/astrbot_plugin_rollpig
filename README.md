@@ -9,6 +9,7 @@ _✨ [astrbot](https://github.com/AstrBotDevs/AstrBot) 今日小猪 ✨_
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![AstrBot](https://img.shields.io/badge/AstrBot-3.4%2B-orange.svg)](https://github.com/Soulter/AstrBot)
 [![GitHub](https://img.shields.io/badge/作者-MegSopern-pink)](https://github.com/MegSopern)
+![动态访问量](https://count.kjchmc.cn/get/@astrbot_plugin_rollpig?theme=gelbooru)
 
 </div>
 
