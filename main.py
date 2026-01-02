@@ -394,11 +394,10 @@ class RollPigPlugin(Star):
         img_path = await asyncio.to_thread(self.render_pig_image, pig_data)
         if img_path and img_path.exists():
             try:
-                chain = [Comp.Plain("这是你的今日小猪：")]
+                chain = [Comp.Plain(". 这是你的今日小猪：")]
                 group_id = event.get_group_id()
                 if group_id:
                     chain.insert(0, Comp.At(qq=user_id))
-                    chain.insert(1, Comp.Plain("，"))
                 await event.send(event.chain_result(chain))
                 await event.send(event.image_result(str(img_path.absolute())))
                 logger.info("合成图片发送成功")
