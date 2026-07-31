@@ -1,5 +1,7 @@
 import asyncio
 import datetime
+import functools
+import inspect
 import json
 import random
 import tempfile
@@ -15,6 +17,91 @@ from astrbot.core.message.components import At
 # 修复导入冲突：PIL的Image重命名为PILImage
 from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
+
+def exp_catch(generic_msg: str = "内部错误，请稍后重试或联系管理员"):
+    """装饰器：支持 async generator / async coroutine / sync function。
+    出错时记录日志并向调用者所在的 event 返回通用提示，不泄露内部异常细节。
+    """
+
+    def exp_handles(func, args, kwargs, e):
+        logger.exception("Exception in %s", func.__name__)
+        msg = exp_msg(e) or generic_msg
+        event = None
+        for v in list(args) + list(kwargs.values()):
+            if v is None:
+                continue
+            if hasattr(v, 'plain_result') and callable(getattr(v, 'plain_result')):
+                event = v
+        if event:
+            # 尝试构造并返回要发送给用户的 result（不要在这里 yield，因为 caller 会负责 yield/return）
+            try:
+                logger.info(f"尝试给用户发送错误信息: {event} -> {msg}")
+
+                return event.plain_result(msg)
+            except Exception:
+                logger.exception("send_message failed in exp_handles")
+                return None
+        else:
+            logger.error(f"找不到 event 参数, {msg}")
+            return None
+
+    def exp_msg(e):
+        """根据异常类型返回对用户友好的通用提示（不暴露内部错误细节）。
+
+        参数说明：保留 func/args/kwargs 用于将来按需定制化错误信息（例如基于函数名映射不同提示），
+        当前实现仅根据异常类型返回固定的中文提示。
+        """
+        if not e:
+            return ''
+        raw_msg = str(e) or (e.args[0] if e.args else repr(e))
+        safe_msg = raw_msg[:200]
+        # 优先匹配常见错误类型，返回不包含内部细节的友好提示文本
+        if isinstance(e, EnvironmentError):
+            return "网络或环境错误，请稍后重试"
+        if isinstance(e, TypeError):
+            return "内部类型错误，请联系管理员"
+        if isinstance(e, ValueError):
+            return f"错误: {safe_msg}"
+        if isinstance(e, IndexError | KeyError):
+            return f"索引错误，请稍后重试"
+
+        # 默认通用提示
+        return "未知错误，请稍后重试或联系管理员"
+
+    def deco(func):
+        if inspect.isasyncgenfunction(func):
+            @functools.wraps(func)
+            async def _wrapper(*args, **kwargs):
+                try:
+                    async for item in func(*args, **kwargs):
+                        yield item
+                except Exception as e:
+                    res = exp_handles(func, args, kwargs, e)
+                    if res:
+                        yield res
+
+            return _wrapper
+
+        if inspect.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def _wrapper(*args, **kwargs):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    return exp_handles(func, args, kwargs, e)
+
+            return _wrapper
+
+        @functools.wraps(func)
+        def _wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                return exp_handles(func, args, kwargs, e)
+
+        return _wrapper
+
+    return deco
 
 
 class RollPigPlugin(Star):
@@ -37,6 +124,7 @@ class RollPigPlugin(Star):
         # 配置项
         self.admins_id: list[str] = context.get_config().get("admins_id", [])
         self.at_view_pig: bool = self.config.get("at_view_pig", False)
+        self.at_pig_user: bool = self.config.get("at_pig_user", True)
 
         # 初始化路径
         self.plugin_dir = Path(__file__).parent
@@ -349,7 +437,8 @@ class RollPigPlugin(Star):
             if (isinstance(seg, At) and str(seg.qq) != event.get_self_id())  # 排除自己
         ]
 
-    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig"})
+    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig", "pig"})
+    @exp_catch()
     async def roll_pig(self, event: AstrMessageEvent):
         """抽取今日小猪"""
         today_str = datetime.date.today().isoformat()
@@ -398,7 +487,8 @@ class RollPigPlugin(Star):
                 group_id = event.get_group_id()
                 if group_id:
                     chain.insert(0, Comp.At(qq=user_id))
-                await event.send(event.chain_result(chain))
+                if self.at_pig_user:
+                    await event.send(event.chain_result(chain))
                 await event.send(event.image_result(str(img_path.absolute())))
                 logger.info("合成图片发送成功")
                 return

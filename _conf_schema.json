@@ -4,5 +4,11 @@
         "hint": "是否允许通过艾特他人来查看对方的今日小猪，默认为关闭",
         "type": "bool",
         "default": false
+    },
+    "at_pig_user": {
+        "description": "艾特猪猪",
+        "hint": "回复时是否 at 对应用户",
+        "type": "bool",
+        "default": true
     }
 }
