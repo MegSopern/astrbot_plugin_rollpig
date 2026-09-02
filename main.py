@@ -280,12 +280,12 @@ class RollPigPlugin(Star):
         )
 
         # 4. 计算垂直居中的起始Y坐标（核心：让整个内容块在画布中垂直居中）
-        start_y = (canvas_height - total_content_h) // 2
+        start_y = int((canvas_height - total_content_h) // 2)
 
         # 5. 绘制所有元素（基于起始Y坐标，保证整体居中）
         # 5.1 绘制头像（水平+垂直居中）
-        avatar_x = (canvas_width - avatar_w) // 2
-        avatar_y = start_y
+        avatar_x = ((canvas_width - avatar_w) // 2)
+        avatar_y = int(start_y)
         if avatar:
             canvas.paste(
                 avatar,
