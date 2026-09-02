@@ -284,7 +284,7 @@ class RollPigPlugin(Star):
 
         # 5. 绘制所有元素（基于起始Y坐标，保证整体居中）
         # 5.1 绘制头像（水平+垂直居中）
-        avatar_x = ((canvas_width - avatar_w) // 2)
+        avatar_x = int((canvas_width - avatar_w) // 2)
         avatar_y = int(start_y)
         if avatar:
             canvas.paste(
