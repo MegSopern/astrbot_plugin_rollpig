@@ -37,6 +37,7 @@ class RollPigPlugin(Star):
         # 配置项
         self.admins_id: list[str] = context.get_config().get("admins_id", [])
         self.at_view_pig: bool = self.config.get("at_view_pig", False)
+        self.at_reply_user: bool = self.config.get("at_reply_user", True)
 
         # 初始化路径
         self.plugin_dir = Path(__file__).parent
@@ -349,7 +350,7 @@ class RollPigPlugin(Star):
             if (isinstance(seg, At) and str(seg.qq) != event.get_self_id())  # 排除自己
         ]
 
-    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig"})
+    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig", "pig"})
     async def roll_pig(self, event: AstrMessageEvent):
         """抽取今日小猪"""
         today_str = datetime.date.today().isoformat()
@@ -394,10 +395,14 @@ class RollPigPlugin(Star):
         img_path = await asyncio.to_thread(self.render_pig_image, pig_data)
         if img_path and img_path.exists():
             try:
-                chain = [Comp.Plain(". 这是你的今日小猪：")]
-                group_id = event.get_group_id()
-                if group_id:
-                    chain.insert(0, Comp.At(qq=user_id))
+                # 只有群聊才需要 @；是否 @ 由配置项 at_reply_user 控制
+                mention_user = bool(event.get_group_id()) and self.at_reply_user
+                chain = []
+                if mention_user:
+                    chain.append(Comp.At(qq=user_id))
+                # @ 后接文案需要 ". " 作分隔，否则会粘在一起
+                prefix = ". " if mention_user else ""
+                chain.append(Comp.Plain(f"{prefix}这是你的今日小猪："))
                 await event.send(event.chain_result(chain))
                 await event.send(event.image_result(str(img_path.absolute())))
                 return

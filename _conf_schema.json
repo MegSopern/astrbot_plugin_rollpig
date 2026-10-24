@@ -4,5 +4,11 @@
         "hint": "是否允许通过艾特他人来查看对方的今日小猪，默认为关闭",
         "type": "bool",
         "default": false
+    },
+    "at_reply_user": {
+        "description": "回复时艾特用户",
+        "hint": "群聊中发送今日小猪时是否 @ 抽到小猪的用户；关闭后只发文案和图片，默认为开启",
+        "type": "bool",
+        "default": true
     }
 }

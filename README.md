@@ -32,6 +32,7 @@ git clone https://github.com/MegSopern/astrbot_plugin_rollpig
 - 每个用户每天只能抽取一次 🐽  
 - 重复抽取不会改变结果 🐷  
 - 每天 0 点自动重置 🐖
+- 开启 `at_view_pig` 后，可使用 `今日小猪@用户` 查看指定用户的小猪 🐷
 
 ---
 
