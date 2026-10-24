@@ -1,4 +1,8 @@
 # 更新
+## v1.4.1 (2026-10-25)
+### 修复
+- 修复渲染小猪图片时报 `TypeError: 'float' object cannot be interpreted as an integer` 的崩溃
+
 ## v1.4.0 (2026-10-25)
 ### 新增
 - 新增配置项 `at_reply_user`，可控制群聊回复今日小猪时是否 @ 抽到小猪的用户。
