@@ -400,7 +400,6 @@ class RollPigPlugin(Star):
                     chain.insert(0, Comp.At(qq=user_id))
                 await event.send(event.chain_result(chain))
                 await event.send(event.image_result(str(img_path.absolute())))
-                logger.info("合成图片发送成功")
                 return
             except Exception as e:
                 logger.error(f"发送合成图片失败：{str(e)}")
