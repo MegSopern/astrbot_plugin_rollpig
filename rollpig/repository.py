@@ -34,9 +34,6 @@ class PigRepository:
         """全部小猪档案。"""
         return self._pigs
 
-    def __len__(self) -> int:
-        return len(self._pigs)
-
     def __bool__(self) -> bool:
         return bool(self._pigs)
 

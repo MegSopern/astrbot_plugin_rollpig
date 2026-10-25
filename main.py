@@ -1,10 +1,3 @@
-"""今日小猪插件入口（装配层）。
-
-AstrBot 的硬约束（一个 ``main.py`` 仅允许一个 ``Star`` 子类、所有 ``@filter.*``
-必须写在该类内）决定了本文件只能做两件事：装配依赖、声明指令。业务实现全部
-下沉到 ``rollpig`` 包，本类不包含渲染、存储、抽签等细节。
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -14,21 +7,15 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.star import Context, Star, StarTools
 from astrbot.core import AstrBotConfig
 
-from .rollpig import (
-    AtTargetResolver,
-    CanvasSpec,
-    DailyBoardStore,
-    FontLibrary,
-    JsonStore,
-    Pig,
-    PigCardRenderer,
-    PigPresenter,
-    PigRepository,
-    PluginSettings,
-    RollPigService,
-    TextMetrics,
-    messages,
-)
+from .rollpig.adapter import AtTargetResolver, PigPresenter
+from .rollpig.config import PluginSettings
+from .rollpig.messages import CATALOG_UNAVAILABLE
+from .rollpig.models import Pig
+from .rollpig.renderer import CanvasSpec, PigCardRenderer
+from .rollpig.repository import PigRepository
+from .rollpig.service import RollPigService
+from .rollpig.storage import BoardStore
+from .rollpig.text import FontLibrary, TextMetrics
 
 PLUGIN_NAME = "astrbot_plugin_rollpig"
 DATA_FILE_NAME = "rollpig_today.json"
@@ -65,7 +52,7 @@ class RollPigPlugin(Star):
             logger=self.logger,
         )
         self.service = RollPigService(
-            DailyBoardStore(JsonStore(data_dir / DATA_FILE_NAME, self.logger)),
+            BoardStore(data_dir / DATA_FILE_NAME, self.logger),
             self.repository,
         )
         self.presenter = PigPresenter(self.settings, self.logger)
@@ -81,7 +68,7 @@ class RollPigPlugin(Star):
 
         pig = self.service.draw(decision.user_id)
         if pig is None:
-            await event.send(event.plain_result(messages.CATALOG_UNAVAILABLE))
+            await event.send(event.plain_result(CATALOG_UNAVAILABLE))
             return
 
         await self._send_card(event, pig, decision.user_id)
@@ -94,7 +81,9 @@ class RollPigPlugin(Star):
             try:
                 mention = self.presenter.should_mention(event)
                 await event.send(
-                    event.chain_result(self.presenter.card_chain(user_id, mention=mention))
+                    event.chain_result(
+                        self.presenter.card_chain(user_id, mention=mention)
+                    )
                 )
                 await event.send(event.image_result(str(image_path.absolute())))
                 return

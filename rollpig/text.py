@@ -1,9 +1,9 @@
-"""字体加载：模板方法基类 + 声明式子类。
+"""文字渲染基元：字体加载（模板方法 + 声明式子类）与度量、折行。
 
-分层要点：
 - ``FontLoader`` 固定「按候选顺序尝试 → 逐个降级 → 兜底默认字体」的流程；
 - 子类只用类属性声明用途、字号与候选文件，不重复流程代码；
-- ``FontLibrary`` 作为门面，向渲染层暴露常规字体、加粗字体与字号变体。
+- ``FontLibrary`` 作为门面，暴露常规字体、加粗字体与字号变体；
+- ``TextMetrics`` 负责文字尺寸测量与按宽度折行。
 """
 
 from __future__ import annotations
@@ -12,7 +12,8 @@ import logging
 from pathlib import Path
 from typing import ClassVar
 
-from PIL import ImageFont
+from PIL import Image as PILImage
+from PIL import ImageDraw, ImageFont
 
 FontType = ImageFont.FreeTypeFont | ImageFont.ImageFont
 
@@ -102,3 +103,33 @@ class FontLibrary:
         except AttributeError:
             self._logger.warning("当前字体不支持字号变体，沿用原字号")
             return base
+
+
+class TextMetrics:
+    """复用同一块 1x1 画布测量文字，避免每次测量都新建图像。"""
+
+    def __init__(self) -> None:
+        self._scratch_image = PILImage.new("RGB", (1, 1))
+        self._drawer = ImageDraw.Draw(self._scratch_image)
+
+    def measure(self, text: str, font: FontType) -> tuple[int, int]:
+        """返回文字宽高；Pillow < 8 无 ``textbbox`` 时回退 ``textsize``。"""
+        try:
+            left, top, right, bottom = self._drawer.textbbox((0, 0), text, font=font)
+        except AttributeError:
+            return self._drawer.textsize(text, font=font)
+        return right - left, bottom - top
+
+    def wrap(self, text: str, font: FontType, max_width: int) -> list[str]:
+        """按像素宽度逐字折行，返回每行文本。"""
+        lines: list[str] = []
+        current = ""
+        for char in text:
+            current += char
+            width, _ = self.measure(current, font)
+            if width > max_width:
+                lines.append(current[:-1])
+                current = char
+        if current:
+            lines.append(current)
+        return lines

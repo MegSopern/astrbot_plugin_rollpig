@@ -20,10 +20,9 @@ from PIL import Image as PILImage
 from PIL import ImageDraw
 
 from . import messages
-from .fonts import FontLibrary, FontType
 from .models import Pig
 from .repository import PigRepository
-from .typography import TextMetrics
+from .text import FontLibrary, FontType, TextMetrics
 
 
 @dataclass(frozen=True, slots=True)

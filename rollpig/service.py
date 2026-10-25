@@ -8,7 +8,7 @@ from typing import Callable, Sequence
 
 from .models import Pig
 from .repository import PigRepository
-from .storage import DailyBoardStore
+from .storage import BoardStore
 
 
 class RollPigService:
@@ -19,7 +19,7 @@ class RollPigService:
 
     def __init__(
         self,
-        store: DailyBoardStore,
+        store: BoardStore,
         repository: PigRepository,
         *,
         chooser: Callable[[Sequence[Pig]], Pig] | None = None,

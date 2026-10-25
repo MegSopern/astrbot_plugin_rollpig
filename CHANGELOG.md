@@ -1,10 +1,11 @@
 # 更新
 ## v1.5.0 (2026-10-25)
 ### 重构
-- 按面向对象分层重构：`main.py` 只保留 `Star` 子类与指令声明，业务实现下沉到 `rollpig/` 包（config / models / storage / repository / fonts / typography / renderer / service / targeting / presenter）。
+- 按面向对象分层重构：`main.py` 只保留 `Star` 子类与指令声明，业务实现下沉到 `rollpig/` 包（config / models / storage / repository / text / renderer / service / adapter）。
+- 按层合并过细模块：`fonts` + `typography` → `text.py`，`targeting` + `presenter` → `adapter.py`，`JsonStore` 折叠进 `storage.BoardStore`（实现模块 11 → 9，文件 13 → 11）。
 - 卡片渲染改为「内容块组合 + 纵向居中布局」：`ContentBlock` 家族只负责自测量与自绘，`PigCardRenderer` 只负责排布与落盘；画布尺寸、字号、间距、配色收敛为不可变规格对象 `CanvasSpec`，消除散落的魔法数字。
-- 字体加载改为模板方法基类 + 声明式候选表，新增字体只需增加一个子类。
-- 持久化拆分为 `JsonStore`（通用 JSON 读写）与 `DailyBoardStore`（日期校验与结构转换）。
+- 字体加载与文字度量统一到 `text.py`：模板方法基类 + 声明式候选表，新增字体只需增加一个子类。
+- 持久化收敛为单个 `BoardStore`：单文件 JSON 读写、日期校验与损坏重建，去掉多余的通用存储层。
 - 抽签逻辑抽出 `RollPigService`，时间源与随机源可注入，便于测试每日刷新。
 - 渲染结果与交互行为保持不变：全部 96 个素材的卡片输出逐像素一致（Pillow 10.4 / 12.3 双环境校验）。
 
