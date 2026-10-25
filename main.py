@@ -30,15 +30,16 @@ TRIGGER_WORDS = (
     "rollpig",
     "pig",
     "猪咪",
-    "猪猪",
     "猪",
     "🐖",
     "🐷",
     "㊗️",
 )
 COMMAND_ALIASES = {word for word in TRIGGER_WORDS if word != COMMAND_NAME}
-# 免唤醒匹配规则：整条消息去首尾空白后必须完全等于其中一个词（不区分大小写）
-WAKE_FREE_PATTERN = "(?i)(?:{})$".format("|".join(map(re.escape, TRIGGER_WORDS)))
+# 免唤醒匹配规则：消息以触发词开头或结尾即可命中（不区分大小写）
+WAKE_FREE_PATTERN = "(?i)(?:^(?:{0})|(?:{0})$)".format(
+    "|".join(map(re.escape, TRIGGER_WORDS))
+)
 
 
 class RollPigPlugin(Star):
@@ -89,8 +90,11 @@ class RollPigPlugin(Star):
         if not self.settings.wake_free_trigger:
             return
         text = event.get_message_str().strip()
-        if event.is_at_or_wake_command and text in TRIGGER_WORDS:
-            # 该消息已由唤醒前缀 / 艾特 / 私聊的原有路径命中指令，交回 roll_pig，避免重复回复
+        if (
+            (event.is_at_or_wake_command or event.is_private_chat())
+            and text in TRIGGER_WORDS
+        ):
+            # 该消息已由原有指令路径命中，交回 roll_pig，避免重复回复
             return
         await self._draw_and_send(event)
 
