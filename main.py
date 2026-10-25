@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from pathlib import Path
 
 from astrbot.api.event import AstrMessageEvent, filter
@@ -19,6 +20,25 @@ from .rollpig.text import FontLibrary, TextMetrics
 
 PLUGIN_NAME = "astrbot_plugin_rollpig"
 DATA_FILE_NAME = "rollpig_today.json"
+
+# 触发词是唯一事实来源：既作为指令名/别名，也作为「免唤醒词」模式允许的整句内容
+COMMAND_NAME = "今日小猪"
+TRIGGER_WORDS = (
+    "今日小猪",
+    "抽小猪",
+    "我的小猪",
+    "rollpig",
+    "pig",
+    "猪咪",
+    "猪猪",
+    "猪",
+    "🐖",
+    "🐷",
+    "㊗️",
+)
+COMMAND_ALIASES = {word for word in TRIGGER_WORDS if word != COMMAND_NAME}
+# 免唤醒匹配规则：整条消息去首尾空白后必须完全等于其中一个词（不区分大小写）
+WAKE_FREE_PATTERN = "(?i)(?:{})$".format("|".join(map(re.escape, TRIGGER_WORDS)))
 
 
 class RollPigPlugin(Star):
@@ -58,9 +78,23 @@ class RollPigPlugin(Star):
         self.presenter = PigPresenter(self.settings, self.logger)
         self.targeting = AtTargetResolver(self.settings)
 
-    @filter.command("今日小猪", alias={"抽小猪", "我的小猪", "rollpig", "pig"})
+    @filter.command(COMMAND_NAME, alias=COMMAND_ALIASES)
     async def roll_pig(self, event: AstrMessageEvent):
         """抽取今日小猪"""
+        await self._draw_and_send(event)
+
+    @filter.regex(WAKE_FREE_PATTERN)
+    async def roll_pig_wake_free(self, event: AstrMessageEvent):
+        """免唤醒词触发（需开启配置项 wake_free_trigger）"""
+        if not self.settings.wake_free_trigger:
+            return
+        text = event.get_message_str().strip()
+        if event.is_at_or_wake_command and text in TRIGGER_WORDS:
+            # 该消息已由唤醒前缀 / 艾特 / 私聊的原有路径命中指令，交回 roll_pig，避免重复回复
+            return
+        await self._draw_and_send(event)
+
+    async def _draw_and_send(self, event: AstrMessageEvent) -> None:
         decision = self.targeting.resolve(event)
         if decision.rejected:
             await event.send(event.plain_result(decision.message))
