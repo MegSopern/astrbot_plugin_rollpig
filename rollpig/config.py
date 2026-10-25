@@ -16,6 +16,7 @@ class PluginSettings:
 
     at_view_pig: bool = False
     at_reply_user: bool = True
+    wake_free_trigger: bool = False
     admin_ids: tuple[str, ...] = ()
 
     @classmethod
@@ -28,6 +29,7 @@ class PluginSettings:
         return cls(
             at_view_pig=bool(config.get("at_view_pig", False)),
             at_reply_user=bool(config.get("at_reply_user", True)),
+            wake_free_trigger=bool(config.get("wake_free_trigger", False)),
             admin_ids=tuple(str(item) for item in admin_ids),
         )
 
