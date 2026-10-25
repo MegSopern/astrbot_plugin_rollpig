@@ -67,7 +67,15 @@ astrbot_plugin_rollpig/resource
 
 ```
 astrbot_plugin_rollpig/
-├─ main.py               # 插件主逻辑（AstrBot插件核心）
+├─ main.py               # 插件入口（依赖装配 + 指令声明）
+├─ rollpig/              # 业务实现
+│  ├─ renderer.py        # 卡片渲染（内容块 + 布局）
+│  ├─ service.py         # 抽取用例（当天记录 / 每日刷新）
+│  ├─ repository.py      # 小猪档案与图片检索
+│  ├─ storage.py         # 当日记录持久化
+│  ├─ text.py            # 字体加载与文字度量
+│  ├─ adapter.py         # @ 目标解析与消息链组装
+│  └─ ...
 └─ resource/
     ├─ pig.json          # 小猪信息数据
     └─ image/
