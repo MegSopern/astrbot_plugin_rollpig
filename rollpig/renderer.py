@@ -298,6 +298,7 @@ class PigCardRenderer:
         """按展示顺序组装内容块。"""
         spec = self._spec
         regular = self._fonts.regular
+        name_font = self._fonts.variant(self._fonts.bold, spec.name_font_size)
         desc_font = self._fonts.variant(regular, spec.desc_font_size)
         analysis_font = self._fonts.variant(regular, spec.analysis_font_size)
         error_font = self._fonts.variant(regular, spec.error_font_size)
@@ -315,7 +316,7 @@ class PigCardRenderer:
             ),
             NameBlock(
                 text=pig.name,
-                font=self._fonts.bold,
+                font=name_font,
                 metrics=self._metrics,
                 gap_before=spec.spacing_avatar_name,
                 color=spec.name_color,

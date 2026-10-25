@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -44,7 +46,8 @@ class BoardStore:
             self._write(default)
             return default
         try:
-            return json.loads(self._path.read_text("utf-8"))
+            with self._path.open("r", encoding="utf-8") as file:
+                return json.load(file)
         except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             self._logger.error("JSON文件解析失败，重置为默认值：%s（%s）", self._path, exc)
             default = _empty_board()
@@ -52,8 +55,24 @@ class BoardStore:
             return default
 
     def _write(self, data: Any) -> None:
-        """写入 JSON（自动创建父目录）。"""
+        """原子写入 JSON（自动创建父目录）。"""
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        self._path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        temporary_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=self._path.parent,
+                prefix=f".{self._path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as temporary_file:
+                temporary_path = Path(temporary_file.name)
+                json.dump(data, temporary_file, ensure_ascii=False, indent=2)
+                temporary_file.flush()
+                os.fsync(temporary_file.fileno())
+            os.replace(temporary_path, self._path)
+            temporary_path = None
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
