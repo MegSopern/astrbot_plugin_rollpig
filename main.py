@@ -23,7 +23,19 @@ DATA_FILE_NAME = "rollpig_today.json"
 
 # 触发词是唯一事实来源：既作为指令名/别名，也作为「免唤醒词」模式允许的整句内容
 COMMAND_NAME = "今日小猪"
-TRIGGER_WORDS = ("今日小猪", "抽小猪", "我的小猪", "rollpig", "pig", "猪咪")
+TRIGGER_WORDS = (
+    "今日小猪",
+    "抽小猪",
+    "我的小猪",
+    "rollpig",
+    "pig",
+    "猪咪",
+    "猪猪",
+    "猪",
+    "🐖",
+    "🐷",
+    "㊗️",
+)
 COMMAND_ALIASES = {word for word in TRIGGER_WORDS if word != COMMAND_NAME}
 # 免唤醒匹配规则：整条消息去首尾空白后必须完全等于其中一个词（不区分大小写）
 WAKE_FREE_PATTERN = "(?i)(?:{})$".format("|".join(map(re.escape, TRIGGER_WORDS)))
