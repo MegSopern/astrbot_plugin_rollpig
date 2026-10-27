@@ -22,7 +22,7 @@ from .rollpig.text import FontLibrary, TextMetrics
 PLUGIN_NAME = "astrbot_plugin_rollpig"
 DATA_FILE_NAME = "rollpig_today.json"
 
-# 触发词是唯一事实来源：既作为指令名/别名，也作为「免唤醒词」模式允许的整句内容
+# 触发词是唯一事实来源：既作为指令名/别名，也作为「免唤醒词」模式的首尾匹配词
 COMMAND_NAME = "今日小猪"
 TRIGGER_WORDS = (
     "今日小猪",
