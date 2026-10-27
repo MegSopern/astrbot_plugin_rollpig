@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from pathlib import Path
 
@@ -47,6 +48,11 @@ class RollPigPlugin(Star):
 
     def __init__(self, context: Context, config: AstrBotConfig | None = None):
         super().__init__(context)
+        # AstrBot < 4.27.0 的 Star 基类只注入 context，不提供 self.logger，
+        # 直接用 self.logger 会在 __init__ 抛 AttributeError 导致插件加载失败。
+        self.logger = getattr(self, "logger", None) or logging.getLogger(
+            f"astrbot.plugin.{PLUGIN_NAME}"
+        )
         self.config = config or {}
         self.settings = PluginSettings.from_mapping(
             self.config,

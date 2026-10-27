@@ -1,4 +1,9 @@
 # 更新
+## v1.6.6 (2026-10-28)
+### 修复
+- 修复在 AstrBot 4.24.0–4.26.x 上安装/加载插件时抛出 `AttributeError: 'RollPigPlugin' object has no attribute 'logger'` 导致加载失败的问题（Issue #7）。AstrBot 4.27.0 之前的 `Star` 基类只注入 `context`，不提供 `self.logger`，而插件在 `__init__` 中直接使用了该属性。
+- 现在优先复用基类注入的插件专属 logger，仅在缺失时退化为 `astrbot.plugin.astrbot_plugin_rollpig`，因此 AstrBot 4.27.0+ 的日志隔离与级别控制保持不变。
+
 ## v1.6.5 (2026-10-25)
 ### 文档
 - 更新 README 中的访问量徽章。

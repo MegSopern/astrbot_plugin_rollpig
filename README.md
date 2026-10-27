@@ -110,6 +110,11 @@ astrbot_plugin_rollpig/
 - 新增小猪时只需在 `pig.json` 添加对象，并将对应图片放到 `image/` 文件夹即可 🐷  
 - 图片自动按 id 匹配，无需在 JSON 中写图片后缀 🐖  
 
+## 🩺 常见问题 🩺
+
+- **安装或重载时提示 `'RollPigPlugin' object has no attribute 'logger'`，插件加载失败**
+  1.6.5 及更早版本在 AstrBot **4.24.0 – 4.26.x** 上会出现：这些版本的 `Star` 基类只注入 `context`，不提供 `self.logger`。升级到 **1.6.6** 即可解决；1.6.6 同时兼容 AstrBot 4.27.0+，在这些版本上仍使用框架注入的插件专属 logger。详见 [CHANGELOG](CHANGELOG.md)。
+
 ## 🎖️ 致谢
 - 本插件基于[nonebot-plugin-rollpig](https://github.com/Bearlele/nonebot-plugin-rollpig)的核心逻辑进行改造。
 - 欢迎前往原仓库为作者的辛苦付出点亮 ⭐ Star 支持！
