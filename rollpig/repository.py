@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -22,7 +21,7 @@ class PigRepository:
         self,
         catalog_path: Path,
         image_dir: Path,
-        logger: logging.Logger,
+        logger,
     ) -> None:
         self._catalog_path = catalog_path
         self._image_dir = image_dir

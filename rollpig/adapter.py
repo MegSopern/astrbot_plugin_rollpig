@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -69,7 +68,7 @@ class AtTargetResolver:
 class PigPresenter:
     """出站：把领域对象转换成 AstrBot 消息链。"""
 
-    def __init__(self, settings: PluginSettings, logger: logging.Logger) -> None:
+    def __init__(self, settings: PluginSettings, logger) -> None:
         self._settings = settings
         self._logger = logger
 

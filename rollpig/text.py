@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import ClassVar
 
@@ -38,7 +37,7 @@ class FontLoader:
         if missing:
             raise TypeError(f"{cls.__name__} 未声明类属性：{', '.join(missing)}")
 
-    def __init__(self, font_dir: Path, logger: logging.Logger) -> None:
+    def __init__(self, font_dir: Path, logger) -> None:
         self._font_dir = font_dir
         self._logger = logger
 
@@ -91,7 +90,7 @@ class BoldFontLoader(FontLoader):
 class FontLibrary:
     """字体库门面：持有本次加载的常规 / 加粗字体。"""
 
-    def __init__(self, font_dir: Path, logger: logging.Logger) -> None:
+    def __init__(self, font_dir: Path, logger) -> None:
         self._logger = logger
         self.regular = RegularFontLoader(font_dir, logger).load()
         self.bold = BoldFontLoader(font_dir, logger).load()

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 import tempfile
 from pathlib import Path
@@ -24,7 +23,7 @@ class BoardStore:
     日期不匹配视为新的一天。
     """
 
-    def __init__(self, path: Path, logger: logging.Logger) -> None:
+    def __init__(self, path: Path, logger) -> None:
         self._path = path
         self._logger = logger
 
