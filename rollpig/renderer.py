@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 import abc
-import logging
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -160,7 +159,7 @@ class AvatarBlock(ContentBlock):
         spec: CanvasSpec,
         metrics: TextMetrics,
         error_font: FontType,
-        logger: logging.Logger,
+        logger,
     ) -> None:
         super().__init__(gap_before=0)
         self._image_path = image_path
@@ -269,7 +268,7 @@ class PigCardRenderer:
         fonts: FontLibrary,
         metrics: TextMetrics,
         spec: CanvasSpec,
-        logger: logging.Logger,
+        logger,
     ) -> None:
         self._repository = repository
         self._fonts = fonts
